@@ -10,7 +10,7 @@ typedef struct {
 } Producto;
 
 typedef struct {
-    Producto items[MAX_ITEMS];
+    Producto items[MAX_ITEMS]; /* MAX_ITEMS = 4 */
     int      cantidad;  /* cuantos productos hay actualmente */
 } Carrito;
 
