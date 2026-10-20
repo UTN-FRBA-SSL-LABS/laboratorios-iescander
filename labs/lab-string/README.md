@@ -277,7 +277,7 @@ Los tests de `IsEmpty` ya están activos en `StringTest.c`. Corré `make test` y
 
 **P1** — `IsEmpty` podría haberse escrito también como `return s[0] == '\0'`. ¿Son equivalentes? ¿Por qué?
 
-> R:
+> R: Sí, son exactamente lo mismo. En C, usar los corchetes como en s[0] es básicamente azúcar sintáctico para hacer la desreferencia del puntero sumándole la posición, es decir, *(s + 0).
 
 ---
 
@@ -328,11 +328,11 @@ make test
 
 **P2** — ¿Qué hace `s + 1`? ¿Por qué avanza al siguiente carácter y no al siguiente byte?
 
-> R:
+> R: s + 1 avanza directamente al siguiente elemento en memoria basándose en el tipo de dato del puntero. Como s es un puntero a char, la aritmética de punteros le suma sizeof(char) (que es 1 byte). Así avanza de a un byte, que en ASCII representa justo un carácter.
 
 **P3** — Si llamaras a `GetLength(NULL)`, ¿qué pasaría? ¿Por qué las precondiciones del contrato dicen `s != NULL`?
 
-> R:
+> R: Rompería el programa tirando casi seguro un "Segmentation Fault", porque estaríamos intentando acceder (desreferenciar) a una dirección de memoria nula. El contrato aclara que s != NULL para que la función no tenga que andar validando esto internamente; la responsabilidad de pasarle una dirección de memoria válida recae totalmente en quien llama a la función.
 
 ```
 GETLENGTH_PASA=
@@ -367,7 +367,7 @@ El `while` termina cuando alguna de las dos cadenas llega a `'\0'`. Después dev
 
 **P4** — ¿Qué dos casos están mal cubiertos por `return 1`? Describí un ejemplo para cada uno.
 
-> R:
+> R: Ese return 1 falla dando un falso positivo cuando una cadena contiene a la otra al principio pero son de distinto tamaño. Por ejemplo: si s1="hola" y s2="holamundo", o al revés. El while se corta apenas la más corta llega a su fin (\0), devolviendo que son iguales y no verificando si a la otra le seguían sobrando caracteres.
 
 #### Corrección
 
@@ -414,7 +414,7 @@ int AreDecimalDigits(const char *s) {
 
 **P5** — ¿Por qué la cadena vacía no debería considerarse un conjunto de dígitos decimales? Pensalo desde la especificación matemática.
 
-> R:
+> R: Viéndolo desde la especificación matemática, para que se considere que hay dígitos decimales, tiene que haber por lo menos un elemento que caiga en el rango de '0' a '9'. Como la cadena vacía no tiene directamente ningún elemento, no cumple con esa condición base. 
 
 #### Corrección
 
@@ -467,7 +467,7 @@ Antes de implementar, discutí con tu equipo:
 
 **P6** — Conclusión de la discusión:
 
-> R:
+> R: Llegamos a la conclusión de que está bien tenerla aparte en Conversion. La biblioteca String debería ocuparse solo de las operaciones propias del string (como saber la longitud, comparar o buscar caracteres). Convertirlo a un número entero ya es transformar el dato, por lo que separar las cosas ayuda a mantener el principio de responsabilidad única en nuestro diseño.
 
 ---
 
@@ -494,7 +494,7 @@ int ToInteger(const char *s) {
 
 **P7** — El loop acumula correctamente el valor en `resultado`. ¿Qué está mal en el `return`?
 
-> R:
+> R: El problema está en que el return solo está devolviendo el signo (1 o -1) y perdiendo por completo el número que fuimos armando en la variable resultado dentro del for. Lo correcto sería devolver la multiplicación de los dos: return signo * resultado;.
 
 #### Corrección
 
@@ -506,7 +506,7 @@ make test
 
 **P8** — La expresión `*s - '0'` convierte un carácter dígito al entero correspondiente. ¿Por qué funciona? ¿Qué devuelve `'3' - '0'`?
 
-> R:
+> R: Esto se da gracias a cómo funciona la tabla ASCII. Los números del '0' al '9' tienen valores enteros consecutivos (van del 48 al 57). Entonces, si le restamos el valor base de '0' (que es 48) a un carácter como '3' (que es 51), la resta matemática da exactamente el entero 3.
 
 ```
 TOINTEGER_PASA=
@@ -562,7 +562,7 @@ foo
 
 **P9** — ¿Por qué `(void)argc` suprime un warning? ¿Cuándo sería necesario usar `argc`?
 
-> R:
+> R: Poner (void)argc es una forma de decirle explícitamente al compilador que sabemos que la variable está, pero que decidimos no usarla. Esto sirve para que no nos tire warnings molestos al compilar con flags tipo -Wall. Sí usaríamos argc si en vez de avanzar con punteros lo hiciéramos iterando con un índice tradicional (for (int i = 1; i < argc; i++)).
 
 ---
 
@@ -652,7 +652,7 @@ make suma
 ```
 
 ```
-SUMA_PASA=
+SUMA_PASA= 
 ```
 _(SI o NO)_
 
@@ -662,15 +662,15 @@ _(SI o NO)_
 
 **P10** — `GetLength` es recursiva pero en C una llamada recursiva consume un stack frame. Si llamaras `GetLength` con un string de 1.000.000 de caracteres, ¿qué pasaría? ¿Cómo lo resolverías?
 
-> R:
+> R: Si le pasamos un string de un millón de caracteres, nos va a tirar un "Stack Overflow". Esto pasa porque la memoria del stack es bastante chica y cada vez que la función se llama a sí misma recursivamente ocupa un bloque nuevo (stack frame). Para solucionarlo y que aguante strings enormes, habría que reescribir la función de forma iterativa, usando un while o un for.
 
 **P11** — En la Parte III, todos los programas usan `char **arg` para iterar en vez de un índice entero. ¿Qué ventaja tiene este estilo? ¿Cuándo sería preferible usar el índice?
 
-> R:
+> R: Moverse con char **arg queda mucho más idiomático en C y ensucia menos el código al no depender de contadores. Usar un índice i tendría más sentido si necesitáramos saber en todo momento la posición exacta del argumento, por ejemplo, si sabemos de antemano que en la posición 1 viene un archivo de entrada y en la 2 uno de salida.
 
 **P12** — En C, `"hola"` es un literal de tipo `const char *`. Si intentaras modificar un carácter con `s[0] = 'H'`, el comportamiento es indefinido. ¿Por qué? ¿En qué parte de la memoria viven los literales?
 
-> R:
+> R: Literales como "hola" se guardan en una zona de la memoria estática que es de solo lectura (como la sección .rodata). El propio sistema operativo protege esa parte a nivel hardware, por lo que intentar modificarle un carácter a la fuerza hace que el programa explote tirando un error de violación de segmento.
 
 ---
 
